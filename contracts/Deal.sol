@@ -40,7 +40,6 @@ contract Deal {
     bool init;
   }
 
-
   /// The Invoice struct
   struct Invoice {
     uint orderno;
