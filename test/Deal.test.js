@@ -74,6 +74,19 @@ contract("Deal", function(accounts){
       deal = instance;
 
       return deal.sendOrder(goods, quantity, {from: buyer});
+    }).then(function(transaction){
+      return new Promise(function(resolve, reject){
+        return web3.eth.getTransaction(transaction.tx, function(err, tx){
+          if(err){
+            reject(err);
+          }
+          resolve(tx);
+        });
+      });
+    }).then(function(tx){
+      console.log(tx.gasPrice.toString());
+    }).then(function(){
+      //query getTransactionReceipt
     }).then(function(){
       return deal.queryOrder(orderno);
     }).then(function(order){
@@ -139,7 +152,7 @@ contract("Deal", function(accounts){
     });
   });
 
-  it("should the contract's balance was correct", function(){
+  it("should the contract's balance was correct after the safepay", function(){
     
     var deal;
 
@@ -225,7 +238,7 @@ contract("Deal", function(accounts){
     });
   });
 
-  it("should the contract balance was 0 after delivery", function(){
+  it("should the contract's balance was correct after the delivery", function(){
     
     var deal;
 
