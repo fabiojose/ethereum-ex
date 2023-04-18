@@ -1,12 +1,12 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.8.19;
 
-contract Deal {
+contract Good {
 
   /// The seller's address
-  address public owner;
+  address payable public owner;
 
   /// The buyer's address part on this contract
-  address public buyerAddr;
+  address payable public buyerAddr;
 
   /// The Buyer struct  
   struct Buyer {
@@ -18,7 +18,7 @@ contract Deal {
 
   /// The Shipment struct
   struct Shipment {
-    address courier;
+    address payable courier;
     uint price;
     uint safepay;
     address payer;
@@ -82,16 +82,16 @@ contract Deal {
   function Deal(address _buyerAddr) public payable {
     
     /// The seller is the contract's owner
-    owner = msg.sender;
+    owner = payable(msg.sender);
 
-    buyerAddr = _buyerAddr;
+    buyerAddr = payable(_buyerAddr);
   }
 
   /// The function to send purchase orders
   ///   requires fee
   ///   Payable functions returns just the transaction object, with no custom field.
   ///   To get field values listen to OrderSent event.
-  function sendOrder(string goods, uint quantity) payable public {
+  function sendOrder(string memory goods, uint quantity) payable public {
     
     /// Accept orders just from buyer
     require(msg.sender == buyerAddr);
@@ -100,16 +100,16 @@ contract Deal {
     orderseq++;
 
     /// Create the order register
-    orders[orderseq] = Order(goods, quantity, orderseq, 0, 0, Shipment(0, 0, 0, 0, 0, 0, false), true);
+    orders[orderseq] = Order(goods, quantity, orderseq, 0, 0, Shipment(payable(msg.sender), 0, 0, payable(msg.sender), 0, 0, false), true);
 
     /// Trigger the event
-    OrderSent(msg.sender, goods, quantity, orderseq);
+    emit OrderSent(msg.sender, goods, quantity, orderseq);
 
   }
 
   /// The function to query orders by number
   ///   Constant functions returns custom fields
-  function queryOrder(uint number) constant public returns (address buyer, string goods, uint quantity, uint price, uint safepay, uint delivery_price, uint delivey_safepay) {
+  function queryOrder(uint number) public returns (address buyer, string memory goods, uint quantity, uint price, uint safepay, uint delivery_price, uint delivey_safepay) {
     
     /// Validate the order number
     require(orders[number].init);
@@ -147,7 +147,7 @@ contract Deal {
     }
 
     /// Trigger the event
-    PriceSent(buyerAddr, orderno, price, ttype);
+    emit PriceSent(buyerAddr, orderno, price, ttype);
 
   }
 
@@ -167,7 +167,7 @@ contract Deal {
 
     orders[orderno].safepay = msg.value;
 
-    SafepaySent(msg.sender, orderno, msg.value, now);
+    emit SafepaySent(payable(msg.sender), orderno, msg.value, block.timestamp);
   }
 
   /// The function to send the invoice data
@@ -187,15 +187,15 @@ contract Deal {
 
     /// Update the shipment data
     orders[orderno].shipment.date    = delivery_date;
-    orders[orderno].shipment.courier = courier;
+    orders[orderno].shipment.courier = payable(courier);
 
     /// Trigger the event
-    InvoiceSent(buyerAddr, invoiceseq, orderno, delivery_date, courier);
+    emit InvoiceSent(buyerAddr, invoiceseq, orderno, delivery_date, courier);
   }
 
   /// The function to get the sent invoice
   ///  requires no fee
-  function getInvoice(uint invoiceno) constant public returns (address buyer, uint orderno, uint delivery_date, address courier){
+  function getInvoice(uint invoiceno) public returns (address buyer, uint orderno, uint delivery_date, address courier){
   
     /// Validate the invoice number
     require(invoices[invoiceno].init);
@@ -218,7 +218,7 @@ contract Deal {
     /// Just the courier can call this function
     require(_order.shipment.courier == msg.sender);
 
-    OrderDelivered(buyerAddr, invoiceno, _order.number, timestamp, _order.shipment.courier);
+    emit OrderDelivered(buyerAddr, invoiceno, _order.number, timestamp, _order.shipment.courier);
 
     /// Payout the Order to the seller
     owner.transfer(_order.safepay);
@@ -228,7 +228,7 @@ contract Deal {
 
   }
 
-  function health() pure public returns (string) {
+  function health() pure public returns (string memory) {
     return "running";
   }
 }
